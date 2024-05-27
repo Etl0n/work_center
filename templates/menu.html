@@ -1,0 +1,10 @@
+{%extends 'base.html'%}
+{%block content%}
+<div class="menu-container">
+    <ul class="menu">
+        {% for database in list_database%}
+            <li><a href="{{database}}"><h3>{{database}}</h3></a></li>
+        {%endfor%}
+    </ul>
+</div>
+{%endblock%}

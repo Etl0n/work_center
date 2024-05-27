@@ -1,0 +1,33 @@
+{%extends 'base.html'%}
+{%block content%}
+    <form  action = '/{{table}}/form/' class="my-form" method='post'>
+        {%for key, value in fields.items()%}
+            {%if value in ['vacancy', 'archivist']%}
+                <p><label>{{key}}</label><input type='text' name ='{{value}}' value='None'/></p>
+            {%elif value in ['archivesdate']%}
+                <p><label>{{key}}</label><input type='text' name ='{{value}}' value='9999-12-31 12:12:12'/></p>
+            {%else%}
+                <p><label>{{key}}</label><input type='text' name ='{{value}}' value='' required /></p>
+            {%endif%}
+        {%endfor%}
+        {%if table in ['vacancy', 'regperson']%}
+        <p><label>Активна</label>
+            <select name="active">
+                <option value="false">false</option>
+                <option value="true" selected>true</option>
+            </select>
+        </p>
+        {%endif%}
+        {%if table=='personaldata'%}
+        <p><label>Есть ли опыт</label>
+            <select name="experience">
+                <option value="false">false</option>
+                <option value="true" selected>true</option>
+            </select>
+        </p>
+        {%endif%}
+        <input type="submit" class="my-button" />
+    </form>
+    <p></p>
+    <a href="/" method="GET"><button class="my-button">Главная страница</button></a>
+{%endblock%}

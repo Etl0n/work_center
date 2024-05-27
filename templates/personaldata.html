@@ -1,0 +1,25 @@
+{%extends 'base.html'%}
+{%block content%}
+    {{super()}}
+    <a href="form" method="GET"><button class="my-button">Добавить данные в фомру</button></a> 
+    <a href="/" method="GET"><button class="my-button">Главная страница</button></a>
+    <table>
+        {%for line in data %}
+        {%if line!=data[0]%}
+            <tr>
+            {%for element in line%}
+                {%if element!=line[8]%}
+                <td>{{element}}</td>
+                {%else%}
+                <td><img src='{{element}}',width='150' height='80'></td>
+                {%endif%}
+            {%endfor%}
+            </tr>
+        {%else%}
+        {%for element in line%}
+        <td><h4>{{element}}</h4></td>
+        {%endfor%}
+        {%endif%}
+        {%endfor%}
+    </table>
+{%endblock%}

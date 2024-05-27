@@ -1,0 +1,93 @@
+css
+
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.menu-container {
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+}
+
+.menu {
+    list-style-type: none;
+    padding: 0;
+    text-align: center;
+}
+
+.menu li {
+    margin-bottom: 10px;
+}
+
+.menu a {
+    text-decoration: none;
+    color: #333;
+    font-size: 18px;
+}
+
+.my-button {
+    padding: 10px 20px; /* Увеличиваем отступы вокруг текста кнопки */
+    font-size: 16px; /* Устанавливаем размер шрифта */
+    background-color: #3498db; /* Цвет фона кнопки */
+    color: #fff; /* Цвет текста кнопки */
+    border: none; /* Убираем границу кнопки */
+    border-radius: 5px; /* Делаем закругленные углы */
+}
+
+.my-form {
+    max-width: 400px; /* Устанавливаем максимальную ширину формы */
+    margin: 0 auto; /* Центрируем форму на странице */
+}
+
+label {
+    display: block; /* Размещаем каждый label на новой строке */
+    margin-bottom: 5px; /* Добавляем отступ снизу */
+}
+
+input[type="text"],
+input[type="email"],
+input[type="submit"] {
+    width: 100%; /* Занимаем всю доступную ширину */
+    padding: 10px; /* Добавляем отступы вокруг текста */
+    margin-bottom: 10px; /* Добавляем отступ снизу */
+    border: 1px solid #ccc; /* Устанавливаем границу */
+    border-radius: 5px; /* Делаем закругленные углы */
+}
+
+input[type="submit"] {
+    background-color: #3498db; /* Цвет фона кнопки отправки */
+    color: #fff; /* Цвет текста кнопки */
+    cursor: pointer; /* Изменяем курсор при наведении */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+  }
+  
+  th {
+    background-color: #f2f2f2;
+    text-align: left;
+    padding: 10px;
+    font-weight: bold;
+  }
+  
+  td {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
