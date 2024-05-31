@@ -1,18 +1,24 @@
 from get_data import get_content, insert_data
 from flask import Flask, render_template, redirect, url_for
 from flask import request
+from dotenv import load_dotenv
+
+import os
 import psycopg2 as ps
+
+load_dotenv()
 
 app = Flask(__name__)
 
 LIST_DATABASE=['personaldata','education','passportdata', 'regperson', 'vacancy', 'the_worst_vacancy', 'free_vacancy', 'the_best_salary']
 
+#Параметры подключения к БД
 DATABASE = {
-    'host': 'localhost',
-    'port': 5432,
-    'database': 'cw',
-    'user': 'postgres',
-    'password': 'BdktdF2004',
+    'host': os.getenv('HOST', 'localhost'),
+    'port': os.getenv('PORT', 5432),
+    'database': os.getenv('DATABASE', ''),
+    'user': os.getenv('USER', 'postgres'),
+    'password': os.getenv('PASSWORD', ''),
 }
 
 
