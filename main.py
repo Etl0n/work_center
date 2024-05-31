@@ -1,4 +1,4 @@
-from get_data import get_content, insert_data
+from access_db import get_content, insert_data
 from flask import Flask, render_template, redirect, url_for
 from flask import request
 from dotenv import load_dotenv
@@ -40,7 +40,9 @@ def index():
 def personaldata():
     if request.method=='GET':
         data=[]
+        #Название столбцов для вывода
         data.append(tuple(['joblessid','lastname','firstname','patronymic','age', 'passport', 'address','phone', 'picture', 'payment','experience']))
+        #Получение данных из таблиц, данная функция импортирована из дургого файла
         data+=get_content(conn=conn, database='personaldata')
         return render_template('personaldata.html', data=data)
 
@@ -48,7 +50,9 @@ def personaldata():
 def education():
     if request.method=='GET':
         data=[]
+        #Название столбцов для вывода
         data.append(tuple(['id','joblessid','studyplace','studyaddress','studytype']))
+        #Получение данных из таблиц, данная функция импортирована из дургого файла
         data+=get_content(conn=conn, database='education')
         return render_template('viewlist.html', data=data, add_form=False)
 
@@ -56,7 +60,9 @@ def education():
 def passportdata():
     if request.method=='GET':
         data=[]
+        #Название столбцов для вывода
         data.append(tuple(['passport','passportdate','region']))
+        #Получение данных из таблиц, данная функция импортирована из дургого файла
         data+=get_content(conn=conn, database='passportdata')
         return render_template('viewlist.html', data=data, add_form=False)
 
@@ -64,7 +70,9 @@ def passportdata():
 def regperson():
     if request.method=='GET':
         data=[]
+        #Название столбцов для вывода
         data.append(tuple(['id','idreg','registrar','regdate','arhivist','archivesdate','active','vacancy']))
+        #Получение данных из таблиц, данная функция импортирована из дургого файла
         data+=get_content(conn=conn, database='regperson')
         return render_template('viewlist.html', data=data, add_form=True)
 
@@ -72,7 +80,9 @@ def regperson():
 def vacancy():
     if request.method=='GET':
         data=[]
+        #Название столбцов для вывода
         data.append(tuple(['jobid','jobtype', 'jobname','jobgiver','place','mobile','district','money','more','active']))
+        #Получение данных из таблиц, данная функция импортирована из дургого файла
         data+=get_content(conn=conn, database='vacancy')
         return render_template('viewlist.html', data=data, add_form=True)
     
@@ -120,6 +130,7 @@ def the_best_salary():
 
 @app.route('/personaldata/form/', methods=['POST', 'GET'])
 def add_personal():
+    #Вывод формы
     if request.method=='GET':
         fields = {
             'Имя': 'firstname',
@@ -135,6 +146,8 @@ def add_personal():
             'Место регитрации паспорта': 'region',
         }
         return render_template('form.html', fields=fields, table='personaldata')
+    
+    #Обрботка полученных данных
     if request.method=='POST':
         values_for_passportdata=list()
         values_for_personaldata=list()
@@ -146,7 +159,6 @@ def add_personal():
         column_for_personaldata=", ".join(column_for_personaldata)
         column_for_passportdata=", ".join(column_for_passportdata)
 
-
         for key in keys:
             if key=='passportdate' or key=='region':
                 values_for_passportdata.append(request.form[key])
@@ -156,13 +168,14 @@ def add_personal():
                 values_for_personaldata.append(int(request.form[key]))
             else:
                 values_for_personaldata.append(request.form[key])
-
+        #Вставка данных в таблицу, функция импортированная из другого файла
         insert_data(conn=conn, database='passportdata', column=column_for_passportdata, values=values_for_passportdata)
         insert_data(conn=conn, database='personaldata', column=column_for_personaldata, values=values_for_personaldata)
         return redirect(url_for('personaldata'))
 
 @app.route('/vacancy/form/', methods=['POST', 'GET'])
 def add_vacancy():
+    #Вывод формы
     if request.method=='GET':
         fields = {
             'Тип вакансии': 'jobtype',
@@ -176,16 +189,19 @@ def add_vacancy():
         }
         return render_template('form.html', fields=fields, table='vacancy')
     
+    #Обрботка полученных данных
     if request.method=='POST':
         keys=list(request.form.keys())
         column=", ".join(keys)
         values=[request.form[x] for x in keys]
+        #Вставка данных в таблицу, функция импортированная из другого файла
         insert_data(conn=conn, database='vacancy', column=column, values=values)
         return redirect(url_for('vacancy'))
     
 
 @app.route('/regperson/form/', methods=['POST', 'GET'])
 def add_regperson():
+    #Вывод формы
     if request.method=='GET':
         fields = {
             'ID пользователя': 'id',
@@ -197,11 +213,13 @@ def add_regperson():
         }
         return render_template('form.html', fields=fields, table='regperson')
     
+    #Обрботка полученных данных
     if request.method=='POST':
         keys=list(request.form.keys())
         values=[request.form[x] for x in keys]
         keys.append('idreg')
         column=", ".join(keys)
+        #Вставка данных в таблицу, функция импортированная из другого файла
         insert_data(conn=conn, database='regperson', column=column, values=values)
         return redirect(url_for('regperson'))
 
