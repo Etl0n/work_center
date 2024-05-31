@@ -14,12 +14,14 @@ def insert_data(conn, database, column, values):
         )
     if database == "personaldata":
         cursor.execute(
-            f"INSERT INTO centre_work.{database} ({column}) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            f"INSERT INTO centre_work.{database} ({column})"
+            "VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
             values,
         )
     if database == "vacancy":
         cursor.execute(
-            f"INSERT INTO centre_work.{database} ({column}) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            f"INSERT INTO centre_work.{database} ({column})"
+            "VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
             values,
         )
     if database == "regperson":
@@ -31,7 +33,8 @@ def insert_data(conn, database, column, values):
             values.append("1")
             values[5] = None
             cursor.execute(
-                f"INSERT INTO centre_work.{database} ({column}) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
+                f"INSERT INTO centre_work.{database} ({column})"
+                "VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
                 values,
             )
         else:
@@ -40,7 +43,8 @@ def insert_data(conn, database, column, values):
             if values[5] == "None":
                 values[5] = None
             cursor.execute(
-                f"INSERT INTO centre_work.{database} ({column}) VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
+                f"INSERT INTO centre_work.{database} ({column})"
+                "VALUES(%s, %s, %s, %s, %s, %s, %s, %s)",
                 values,
             )
             if values[5] is not None:
