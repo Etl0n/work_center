@@ -3,12 +3,40 @@ import os
 import psycopg2 as ps
 from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, url_for
+from flask_sqlalchemy import SQLAlchemy
 
 from access_db import get_content, insert_data
 
 load_dotenv()
 
 app = Flask(__name__)
+
+username = os.getenv("USER", "postgres")
+password = os.getenv("PASSWORD", "")
+dbname = os.getenv("DATABASE", "")
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    f'postgresql://{username}:{password}@localhost:5432/{dbname}'
+)
+
+db = SQLAlchemy(app)
+
+
+class PersonalData(db.Model):
+    joblessid = db.Column(db.Integer, primary_key=True)
+    lastname = db.Column(db.String(100), nullable=True)
+    firstname = db.Column(db.String(100), nullable=True)
+    patronymic = db.Column(db.String(100), nullable=True)
+    age = db.Column(db.Integer, nullable=True)
+    passport = db.Column(db.Integer, nullable=True)
+    address = db.Column(db.String(100), nullable=True)
+    phone = db.Column(db.String(100), nullable=True)
+    picture = db.Column(db.String(100), nullable=True)
+    payment = db.Column(db.String(100), nullable=True)
+    experience = db.Column(db.Boolean, nullable=True)
+
+
+with app.app_context():
+    db.create_all()
 
 LIST_DATABASE = [
     "personaldata",
