@@ -71,7 +71,9 @@ def education():
     if request.method == "GET":
         data = []
         data.append(
-            tuple(["id", "joblessid", "studyplace", "studyaddress", "studytype"])
+            tuple(
+                ["id", "joblessid", "studyplace", "studyaddress", "studytype"]
+            )
         )
         data += get_content(conn=conn, database="education")
         return render_template("viewlist.html", data=data, add_form=False)
@@ -227,7 +229,9 @@ def add_personal():
             "Дата регистрации паспорта": "passportdate",
             "Место регитрации паспорта": "region",
         }
-        return render_template("form.html", fields=fields, table="personaldata")
+        return render_template(
+            "form.html", fields=fields, table="personaldata"
+        )
     if request.method == "POST":
         values_for_passportdata = list()
         values_for_personaldata = list()
@@ -283,7 +287,9 @@ def add_vacancy():
         keys = list(request.form.keys())
         column = ", ".join(keys)
         values = [request.form[x] for x in keys]
-        insert_data(conn=conn, database="vacancy", column=column, values=values)
+        insert_data(
+            conn=conn, database="vacancy", column=column, values=values
+        )
         return redirect(url_for("vacancy"))
 
 
@@ -305,7 +311,9 @@ def add_regperson():
         values = [request.form[x] for x in keys]
         keys.append("idreg")
         column = ", ".join(keys)
-        insert_data(conn=conn, database="regperson", column=column, values=values)
+        insert_data(
+            conn=conn, database="regperson", column=column, values=values
+        )
         return redirect(url_for("regperson"))
 
 
