@@ -1,14 +1,25 @@
 import os
+from datetime import datetime
 
 import psycopg2 as ps
 from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, url_for
+from flask_sqlalchemy import SQLAlchemy
 
 from access_db import get_content, insert_data
 
 load_dotenv()
 
 app = Flask(__name__)
+
+
+username = os.getenv("USER", "postgres")
+password = os.getenv("PASSWORD", "")
+dbname = os.getenv("DATABASE", "")
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    f'postgresql://{username}:{password}@localhost:5432/{dbname}'
+)
+app.config['DEBUG'] = False
 
 LIST_DATABASE = [
     "personaldata",
@@ -21,6 +32,7 @@ LIST_DATABASE = [
     "the_best_salary",
     "crosstab_before_claster",
 ]
+
 
 # Параметры подключения к БД
 DATABASE = {
@@ -35,10 +47,112 @@ DATABASE = {
 # Подключение к БД
 try:
     conn = ps.connect(**DATABASE)
-    print('Вы подключены к базе данных "cw" как пользователь "postgres".')
+    conn.autocommit = True
+    print(
+        'Вы подключены к базе данных "center_work" как пользователь "postgres".'
+    )
 except ps.OperationalError:
     print("Can`t establish connection to  databse")
     raise
+
+
+try:
+    conn.cursor().execute('CREATE SCHEMA centre_work')
+except ps.errors.DuplicateSchema:
+    print('Схема с названием centre_work уже создана')
+
+
+db = SQLAlchemy(app)
+
+
+class PassportData(db.Model):
+    __table_args__ = {'schema': 'centre_work'}
+    id = db.Column(db.Integer, primary_key=True)
+    passport = db.Column(db.Integer, nullable=True, unique=True)
+    passportdate = db.Column(db.Date, nullable=True)
+    region = db.Column(db.String(100), nullable=True)
+    personal = db.relationship('PersonalData', back_populates='passport')
+
+
+class PersonalData(db.Model):
+    __table_args__ = {'schema': 'centre_work'}
+    joblessid = db.Column(db.Integer, primary_key=True)
+    lastname = db.Column(db.String(100), nullable=True)
+    firstname = db.Column(db.String(100), nullable=True)
+    patronymic = db.Column(db.String(100), nullable=True)
+    age = db.Column(db.Integer, nullable=True)
+    passport = db.Column(
+        db.Integer, db.ForeignKey('centre_work.passport_data.passport')
+    )
+    passport_rel = db.relationship(
+        'PassportData', uselist=False, back_populates='personal'
+    )
+    education = db.relationship('Education', back_populates='personal')
+    address = db.Column(db.String(100), nullable=True)
+    phone = db.Column(db.String(100), nullable=True)
+    picture = db.Column(db.String(100), nullable=True)
+    payment = db.Column(db.String(100), nullable=True)
+    experience = db.Column(db.Boolean, nullable=True)
+
+
+class Education(db.Model):
+    __table_args__ = {'schema': 'centre_work'}
+    id = db.Column(db.Integer, primary_key=True)
+    joblessid = db.Column(
+        db.Integer, db.ForeignKey('centre_work.personal_data.joblessid')
+    )
+    studyaddress = db.Column(db.String(100), nullable=True)
+    studytype = db.Column(db.String(100), nullable=True)
+
+
+class Vacancy(db.Model):
+    __table_args__ = {'schema': 'centre_work'}
+    jobid = db.Column(db.Integer, primary_key=True)
+    jobtype = db.Column(db.String(100), nullable=True)
+    jobname = db.Column(db.String(100), nullable=True)
+    jobgiver = db.Column(db.String(100), nullable=True)
+    place = db.Column(db.String(100), nullable=True)
+    mobile = db.Column(db.String(100), nullable=True)
+    district = db.Column(db.String(100), nullable=True)
+    money = db.Column(db.Integer, nullable=True)
+    more = db.Column(db.Text, nullable=False)
+    active = db.Column(db.Boolean, default=True)
+    person = db.relationship('Regperson', back_populates='vacancy')
+
+
+class Regperson(db.Model):
+    __table_args__ = (
+        db.PrimaryKeyConstraint('id', 'idreg', name='composite_pk'),
+        {'schema': 'centre_work'},
+    )
+    id = db.Column(
+        db.Integer,
+        db.ForeignKey('centre_work.personal_data.joblessid'),
+    )
+    idreg = db.Column(db.Integer)
+    registrar = db.Column(db.String(100), nullable=True)
+    regdate = db.Column(db.Date, nullable=True, default=datetime.now())
+    archivist = db.Column(db.String(100), nullable=False)
+    archivesdate = db.Column(
+        db.Date, nullable=True, default=datetime(year=9999, month=12, day=31)
+    )
+    active = db.Column(db.Boolean, nullable=True, default=True)
+    vacancy = db.Column(db.Integer, db.ForeignKey('centre_work.vacancy.jobid'))
+
+
+with app.app_context():
+    db.create_all()
+
+LIST_DATABASE = [
+    "personal_data",
+    "education",
+    "passport_data",
+    "regperson",
+    "vacancy",
+    "the_worst_vacancy",
+    "free_vacancy",
+    "the_best_salary",
+]
 
 
 @app.route("/")
@@ -48,8 +162,8 @@ def index():
     )
 
 
-@app.route("/personaldata/", methods=["GET"])
-def personaldata():
+@app.route("/personal_data/", methods=["GET"])
+def personal_data():
     if request.method == "GET":
         data = []
         # Название столбцов для вывода
@@ -71,7 +185,7 @@ def personaldata():
             )
         )
         # Получение данных из таблиц, данная функция импортирована из дургого файла
-        data += get_content(conn=conn, database="personaldata")
+        data += get_content(conn=conn, database="personal_data")
         return render_template("personaldata.html", data=data)
 
 
@@ -90,14 +204,14 @@ def education():
         return render_template("viewlist.html", data=data, add_form=False)
 
 
-@app.route("/passportdata/")
+@app.route("/passport_data/")
 def passportdata():
     if request.method == "GET":
         data = []
         # Название столбцов для вывода
-        data.append(tuple(["passport", "passportdate", "region"]))
+        data.append(tuple(["id", "passport", "passportdate", "region"]))
         # Получение данных из таблиц, данная функция импортирована из дургого файла
-        data += get_content(conn=conn, database="passportdata")
+        data += get_content(conn=conn, database="passport_data")
         return render_template("viewlist.html", data=data, add_form=False)
 
 
@@ -230,7 +344,6 @@ def the_best_salary():
     cursor.close()
     return render_template("viewlist.html", data=data, add_form=False)
 
-
 # четвертый запрос
 @app.route("/crosstab_before_claster/", methods=["GET"])
 def crosstab_before_claster():
@@ -274,7 +387,7 @@ def crosstab_before_claster():
     return render_template("viewlist.html", data=new_data, add_form=False)
 
 
-@app.route("/personaldata/form/", methods=["POST", "GET"])
+@app.route("/personal_data/form/", methods=["POST", "GET"])
 def add_personal():
     # Вывод формы
     if request.method == "GET":
@@ -283,51 +396,44 @@ def add_personal():
             "Фамилия": "lastname",
             "Отчество": "patronymic",
             "Возраст": "age",
-            "Номер паспора": "passport",
             "Адресс": "address",
             "Номер телефона": "phone",
             "Ссылка на фотографию": "picture",
             "Желаемая зарплата": "payment",
+            "Номер паспора": "passport",
             "Дата регистрации паспорта": "passportdate",
             "Место регитрации паспорта": "region",
         }
         return render_template(
-            "form.html", fields=fields, table="personaldata"
+            "form.html", fields=fields, table="personal_data"
         )
     if request.method == "POST":
-        values_for_passportdata = list()
-        values_for_personaldata = list()
         keys = list(request.form.keys())
-        column_for_personaldata = keys[:-3:]
-        column_for_personaldata.append(keys[-1])
-        column_for_passportdata = [keys[4]]
-        column_for_passportdata.extend(keys[-3:-1:])
+        column_for_personaldata = keys[:-4:]
+        column_for_personaldata.extend([keys[-1], keys[-4]])
+        values_for_personaldata = [
+            request.form[x] for x in column_for_personaldata
+        ]
+        column_for_passportdata = keys[-4:-1:]
+        values_for_passportdata = [
+            request.form[x] for x in column_for_passportdata
+        ]
         column_for_personaldata = ", ".join(column_for_personaldata)
         column_for_passportdata = ", ".join(column_for_passportdata)
 
-        for key in keys:
-            if key == "passportdate" or key == "region":
-                values_for_passportdata.append(request.form[key])
-            elif key == "age" or key == "passport" or key == "payment":
-                if key == "passport":
-                    values_for_passportdata.append(int(request.form[key]))
-                values_for_personaldata.append(int(request.form[key]))
-            else:
-                values_for_personaldata.append(request.form[key])
-        # Вставка данных в таблицу, функция импортированная из другого файла
         insert_data(
             conn=conn,
-            database="passportdata",
+            database="passport_data",
             column=column_for_passportdata,
             values=values_for_passportdata,
         )
         insert_data(
             conn=conn,
-            database="personaldata",
+            database="personal_data",
             column=column_for_personaldata,
             values=values_for_personaldata,
         )
-        return redirect(url_for("personaldata"))
+        return redirect(url_for("personal_data"))
 
 
 @app.route("/vacancy/form/", methods=["POST", "GET"])
