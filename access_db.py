@@ -56,5 +56,4 @@ def insert_data(conn, database, column, values):
                 cursor.execute(
                     f"UPDATE centre_work.vacancy SET active=true WHERE jobid={last_str[-1]}"
                 )
-    conn.commit()
     cursor.close()
