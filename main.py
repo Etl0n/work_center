@@ -12,13 +12,26 @@ load_dotenv()
 
 app = Flask(__name__)
 
+
 username = os.getenv("USER", "postgres")
 password = os.getenv("PASSWORD", "")
 dbname = os.getenv("DATABASE", "")
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     f'postgresql://{username}:{password}@localhost:5432/{dbname}'
 )
-app.config['DEBUG'] = True
+app.config['DEBUG'] = False
+
+LIST_DATABASE = [
+    "personaldata",
+    "education",
+    "passportdata",
+    "regperson",
+    "vacancy",
+    "the_worst_vacancy",
+    "free_vacancy",
+    "the_best_salary",
+    "crosstab_before_claster",
+]
 
 
 # Параметры подключения к БД
@@ -330,6 +343,48 @@ def the_best_salary():
     data.extend(cursor.fetchall())
     cursor.close()
     return render_template("viewlist.html", data=data, add_form=False)
+
+# четвертый запрос
+@app.route("/crosstab_before_claster/", methods=["GET"])
+def crosstab_before_claster():
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT "
+        "CASE "
+        "WHEN money < 20000 THEN 'Кластер 1: < 20000' "
+        "WHEN money >= 20000 AND money < 40000 THEN 'Кластер 2: 20000-39999' "
+        "WHEN money >= 40000 AND money < 60000 THEN 'Кластер 3: 40000-59999' "
+        "WHEN money >= 60000 AND money < 80000 THEN 'Кластер 4: 60000-79999' "
+        "ELSE 'Кластер 5: >= 80000' "
+        "END AS salary_cluster, "
+        "CASE "
+        "WHEN place='Удаленно' THEN 'удаленно' "
+        "ELSE 'оффис' "
+        "END AS work_type, "
+        "COUNT(*) AS count_vacancy "
+        "FROM centre_work.vacancy "
+        "WHERE active='True' "
+        "GROUP BY salary_cluster, work_type "
+        "ORDER BY salary_cluster, work_type "
+    )
+    data = cursor.fetchall()
+    new_data = list()
+    new_data.append(
+        tuple(
+            [
+                "№ Кластера",
+                "Оффис",
+                "Удаленно",
+            ]
+        )
+    )
+    new_data.append(tuple([data[0][0], data[0][2], data[1][2]]))
+    new_data.append(tuple([data[2][0], data[2][2], data[3][2]]))
+    new_data.append(tuple([data[4][0], data[4][2], data[5][2]]))
+    new_data.append(tuple([data[6][0], data[6][2], data[7][2]]))
+    new_data.append(tuple([data[8][0], data[8][2], data[9][2]]))
+    cursor.close()
+    return render_template("viewlist.html", data=new_data, add_form=False)
 
 
 @app.route("/personal_data/form/", methods=["POST", "GET"])
