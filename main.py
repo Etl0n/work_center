@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 import psycopg2 as ps
 from dotenv import load_dotenv
@@ -55,7 +56,7 @@ class PassportData(db.Model):
     __table_args__ = {'schema': 'centre_work'}
     id = db.Column(db.Integer, primary_key=True)
     passport = db.Column(db.Integer, nullable=True, unique=True)
-    passport_date = db.Column(db.Date, nullable=True)
+    passportdate = db.Column(db.Date, nullable=True)
     region = db.Column(db.String(100), nullable=True)
     personal = db.relationship('PersonalData', back_populates='passport')
 
@@ -103,15 +104,36 @@ class Vacancy(db.Model):
     money = db.Column(db.Integer, nullable=True)
     more = db.Column(db.Text, nullable=False)
     active = db.Column(db.Boolean, default=True)
+    person = db.relationship('Regperson', back_populates='vacancy')
+
+
+class Regperson(db.Model):
+    __table_args__ = (
+        db.PrimaryKeyConstraint('id', 'idreg', name='composite_pk'),
+        {'schema': 'centre_work'},
+    )
+    id = db.Column(
+        db.Integer,
+        db.ForeignKey('centre_work.personal_data.joblessid'),
+    )
+    idreg = db.Column(db.Integer)
+    registrar = db.Column(db.String(100), nullable=True)
+    regdate = db.Column(db.Date, nullable=True, default=datetime.now())
+    archivist = db.Column(db.String(100), nullable=False)
+    archivesdate = db.Column(
+        db.Date, nullable=True, default=datetime(year=9999, month=12, day=31)
+    )
+    active = db.Column(db.Boolean, nullable=True, default=True)
+    vacancy = db.Column(db.Integer, db.ForeignKey('centre_work.vacancy.jobid'))
 
 
 with app.app_context():
     db.create_all()
 
 LIST_DATABASE = [
-    "personaldata",
+    "personal_data",
     "education",
-    "passportdata",
+    "passport_data",
     "regperson",
     "vacancy",
     "the_worst_vacancy",
@@ -127,8 +149,8 @@ def index():
     )
 
 
-@app.route("/personaldata/", methods=["GET"])
-def personaldata():
+@app.route("/personal_data/", methods=["GET"])
+def personal_data():
     if request.method == "GET":
         data = []
         # Название столбцов для вывода
@@ -169,7 +191,7 @@ def education():
         return render_template("viewlist.html", data=data, add_form=False)
 
 
-@app.route("/passportdata/")
+@app.route("/passport_data/")
 def passportdata():
     if request.method == "GET":
         data = []
@@ -310,7 +332,7 @@ def the_best_salary():
     return render_template("viewlist.html", data=data, add_form=False)
 
 
-@app.route("/personaldata/form/", methods=["POST", "GET"])
+@app.route("/personal_data/form/", methods=["POST", "GET"])
 def add_personal():
     # Вывод формы
     if request.method == "GET":
@@ -319,11 +341,11 @@ def add_personal():
             "Фамилия": "lastname",
             "Отчество": "patronymic",
             "Возраст": "age",
-            "Номер паспора": "passport",
             "Адресс": "address",
             "Номер телефона": "phone",
             "Ссылка на фотографию": "picture",
             "Желаемая зарплата": "payment",
+            "Номер паспора": "passport",
             "Дата регистрации паспорта": "passportdate",
             "Место регитрации паспорта": "region",
         }
@@ -331,26 +353,19 @@ def add_personal():
             "form.html", fields=fields, table="personal_data"
         )
     if request.method == "POST":
-        values_for_passportdata = list()
-        values_for_personaldata = list()
         keys = list(request.form.keys())
-        column_for_personaldata = keys[:-3:]
-        column_for_personaldata.append(keys[-1])
-        column_for_passportdata = [keys[4]]
-        column_for_passportdata.extend(keys[-3:-1:])
+        column_for_personaldata = keys[:-4:]
+        column_for_personaldata.extend([keys[-1], keys[-4]])
+        values_for_personaldata = [
+            request.form[x] for x in column_for_personaldata
+        ]
+        column_for_passportdata = keys[-4:-1:]
+        values_for_passportdata = [
+            request.form[x] for x in column_for_passportdata
+        ]
         column_for_personaldata = ", ".join(column_for_personaldata)
         column_for_passportdata = ", ".join(column_for_passportdata)
 
-        for key in keys:
-            if key == "passportdate" or key == "region":
-                values_for_passportdata.append(request.form[key])
-            elif key == "age" or key == "passport" or key == "payment":
-                if key == "passport":
-                    values_for_passportdata.append(int(request.form[key]))
-                values_for_personaldata.append(int(request.form[key]))
-            else:
-                values_for_personaldata.append(request.form[key])
-        # Вставка данных в таблицу, функция импортированная из другого файла
         insert_data(
             conn=conn,
             database="passport_data",
@@ -363,7 +378,7 @@ def add_personal():
             column=column_for_personaldata,
             values=values_for_personaldata,
         )
-        return redirect(url_for("personaldata"))
+        return redirect(url_for("personal_data"))
 
 
 @app.route("/vacancy/form/", methods=["POST", "GET"])
