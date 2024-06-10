@@ -3,8 +3,8 @@
     {{super()}}
     {%if add_form%}
         <a href="form" method="GET"><button class="my-button">Добавить данные в фомру</button></a> 
-        <a href="/" method="GET"><button class="my-button">Главная страница</button></a>
     {%endif%}
+    <a href="/" method="GET"><button class="my-button">Главная страница</button></a>
     <table>
         {%for line in data %}
         {%if line!=data[0]%}
