@@ -17,22 +17,92 @@ dbname = os.getenv("DATABASE", "")
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     f'postgresql://{username}:{password}@localhost:5432/{dbname}'
 )
+app.config['DEBUG'] = True
+
+
+# Параметры подключения к БД
+DATABASE = {
+    "host": os.getenv("HOST", "localhost"),
+    "port": os.getenv("PORT", 5432),
+    "database": os.getenv("DATABASE", ""),
+    "user": os.getenv("USER", "postgres"),
+    "password": os.getenv("PASSWORD", ""),
+}
+
+
+# Подключение к БД
+try:
+    conn = ps.connect(**DATABASE)
+    conn.autocommit = True
+    print(
+        'Вы подключены к базе данных "center_work" как пользователь "postgres".'
+    )
+except ps.OperationalError:
+    print("Can`t establish connection to  databse")
+    raise
+
+
+try:
+    conn.cursor().execute('CREATE SCHEMA centre_work')
+except ps.errors.DuplicateSchema:
+    print('Схема с названием centre_work уже создана')
+
 
 db = SQLAlchemy(app)
 
 
+class PassportData(db.Model):
+    __table_args__ = {'schema': 'centre_work'}
+    id = db.Column(db.Integer, primary_key=True)
+    passport = db.Column(db.Integer, nullable=True, unique=True)
+    passport_date = db.Column(db.Date, nullable=True)
+    region = db.Column(db.String(100), nullable=True)
+    personal = db.relationship('PersonalData', back_populates='passport')
+
+
 class PersonalData(db.Model):
+    __table_args__ = {'schema': 'centre_work'}
     joblessid = db.Column(db.Integer, primary_key=True)
     lastname = db.Column(db.String(100), nullable=True)
     firstname = db.Column(db.String(100), nullable=True)
     patronymic = db.Column(db.String(100), nullable=True)
     age = db.Column(db.Integer, nullable=True)
-    passport = db.Column(db.Integer, nullable=True)
+    passport = db.Column(
+        db.Integer, db.ForeignKey('centre_work.passport_data.passport')
+    )
+    passport_rel = db.relationship(
+        'PassportData', uselist=False, back_populates='personal'
+    )
+    education = db.relationship('Education', back_populates='personal')
     address = db.Column(db.String(100), nullable=True)
     phone = db.Column(db.String(100), nullable=True)
     picture = db.Column(db.String(100), nullable=True)
     payment = db.Column(db.String(100), nullable=True)
     experience = db.Column(db.Boolean, nullable=True)
+
+
+class Education(db.Model):
+    __table_args__ = {'schema': 'centre_work'}
+    id = db.Column(db.Integer, primary_key=True)
+    joblessid = db.Column(
+        db.Integer, db.ForeignKey('centre_work.personal_data.joblessid')
+    )
+    studyaddress = db.Column(db.String(100), nullable=True)
+    studytype = db.Column(db.String(100), nullable=True)
+
+
+class Vacancy(db.Model):
+    __table_args__ = {'schema': 'centre_work'}
+    jobid = db.Column(db.Integer, primary_key=True)
+    jobtype = db.Column(db.String(100), nullable=True)
+    jobname = db.Column(db.String(100), nullable=True)
+    jobgiver = db.Column(db.String(100), nullable=True)
+    place = db.Column(db.String(100), nullable=True)
+    mobile = db.Column(db.String(100), nullable=True)
+    district = db.Column(db.String(100), nullable=True)
+    money = db.Column(db.Integer, nullable=True)
+    more = db.Column(db.Text, nullable=False)
+    active = db.Column(db.Boolean, default=True)
 
 
 with app.app_context():
@@ -48,24 +118,6 @@ LIST_DATABASE = [
     "free_vacancy",
     "the_best_salary",
 ]
-
-# Параметры подключения к БД
-DATABASE = {
-    "host": os.getenv("HOST", "localhost"),
-    "port": os.getenv("PORT", 5432),
-    "database": os.getenv("DATABASE", ""),
-    "user": os.getenv("USER", "postgres"),
-    "password": os.getenv("PASSWORD", ""),
-}
-
-
-# Подключение к БД
-try:
-    conn = ps.connect(**DATABASE)
-    print('Вы подключены к базе данных "cw" как пользователь "postgres".')
-except ps.OperationalError:
-    print("Can`t establish connection to  databse")
-    raise
 
 
 @app.route("/")
@@ -98,7 +150,7 @@ def personaldata():
             )
         )
         # Получение данных из таблиц, данная функция импортирована из дургого файла
-        data += get_content(conn=conn, database="personaldata")
+        data += get_content(conn=conn, database="personal_data")
         return render_template("personaldata.html", data=data)
 
 
@@ -122,9 +174,9 @@ def passportdata():
     if request.method == "GET":
         data = []
         # Название столбцов для вывода
-        data.append(tuple(["passport", "passportdate", "region"]))
+        data.append(tuple(["id", "passport", "passportdate", "region"]))
         # Получение данных из таблиц, данная функция импортирована из дургого файла
-        data += get_content(conn=conn, database="passportdata")
+        data += get_content(conn=conn, database="passport_data")
         return render_template("viewlist.html", data=data, add_form=False)
 
 
@@ -276,7 +328,7 @@ def add_personal():
             "Место регитрации паспорта": "region",
         }
         return render_template(
-            "form.html", fields=fields, table="personaldata"
+            "form.html", fields=fields, table="personal_data"
         )
     if request.method == "POST":
         values_for_passportdata = list()
@@ -301,13 +353,13 @@ def add_personal():
         # Вставка данных в таблицу, функция импортированная из другого файла
         insert_data(
             conn=conn,
-            database="passportdata",
+            database="passport_data",
             column=column_for_passportdata,
             values=values_for_passportdata,
         )
         insert_data(
             conn=conn,
-            database="personaldata",
+            database="personal_data",
             column=column_for_personaldata,
             values=values_for_personaldata,
         )

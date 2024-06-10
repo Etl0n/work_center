@@ -8,11 +8,12 @@ def get_content(conn, database):
 
 def insert_data(conn, database, column, values):
     cursor = conn.cursor()
-    if database == "passportdata":
+    if database == "passport_data":
         cursor.execute(
-            f"INSERT INTO centre_work.{database} ({column}) VALUES(%s, %s, %s)", values
+            f"INSERT INTO centre_work.{database} ({column}) VALUES(%s, %s, %s)",
+            values,
         )
-    if database == "personaldata":
+    if database == "personal_data":
         cursor.execute(
             f"INSERT INTO centre_work.{database} ({column})"
             "VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
